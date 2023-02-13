@@ -20,6 +20,7 @@ func main() {
 	//configs.ConnectDB()
 	routes.UserRoute(router)
 	router.Use(middleware.Authentication())
+	router.Use(middleware.CORSMiddleware())
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	ctx.JSON(200, gin.H{
 	// 		"data": "GIN",
@@ -36,5 +37,5 @@ func main() {
 		c.JSON(200, gin.H{"success": "Access granted for api-2"})
 	})
 
-	router.Run("localhost:7000")
+	router.Run("localhost:8080")
 }
