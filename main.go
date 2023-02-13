@@ -20,7 +20,12 @@ func main() {
 	router.Use(gin.Logger())
 	//configs.ConnectDB()
 	routes.UserRoute(router)
-	router.Use(cors.Default())
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowCredentials: true,
+		Debug:            true,
+	})
+	router.Use(corsMiddleware.Handler)
 	router.Use(middleware.Authentication())
 	// router.Use(middleware.CORSMiddleware())
 	// router.GET("/", func(ctx *gin.Context) {

@@ -4,7 +4,10 @@ go 1.19
 
 require github.com/go-playground/validator v9.31.0+incompatible
 
-require github.com/gin-contrib/cors v1.4.0 // indirect
+require (
+	github.com/gin-contrib/cors v1.4.0 // indirect
+	github.com/rs/cors v1.8.3 // indirect
+)
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
