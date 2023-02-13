@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/arkhamHack/VerbiNative-backend/middleware"
 	"github.com/arkhamHack/VerbiNative-backend/routes"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,8 +20,9 @@ func main() {
 	router.Use(gin.Logger())
 	//configs.ConnectDB()
 	routes.UserRoute(router)
+	router.Use(cors.Default())
 	router.Use(middleware.Authentication())
-	router.Use(middleware.CORSMiddleware())
+	// router.Use(middleware.CORSMiddleware())
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	ctx.JSON(200, gin.H{
 	// 		"data": "GIN",
