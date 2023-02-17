@@ -6,14 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-)
-
-var (
-	rdb *redis.Client
 )
 
 func ConnectDB() *mongo.Client {

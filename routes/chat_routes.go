@@ -1,14 +1,15 @@
 package routes
 
 import (
+	"github.com/arkhamHack/VerbiNative-backend/api"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
 )
 
-var rdb *redis.Client
-
 func ChatRoutes(router *gin.Engine) {
-	router.GET("/chat", func(c *gin.Context) {
-		// api.H(rdb, api.ChatWe)
-	})
+	//	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+
+	router.GET("/chat/:username", api.ChatHandler)
+	router.GET("/chat/:username/channels", api.UserChannelHandler)
+	router.GET("/users", api.UserHandler)
+
 }

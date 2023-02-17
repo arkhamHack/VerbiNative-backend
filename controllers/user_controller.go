@@ -47,24 +47,28 @@ func Signup() gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		var user models.User
 		defer cancel()
-
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		if validate_err := validate.Struct(&user); validate_err != nil {
+		validate_err := validate.Struct(&user)
+		if validate_err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "validation error", Data: map[string]interface{}{"data": validate_err.Error()}})
 			return
 		}
 		count, err := UserCollec.CountDocuments(ctx, bson.M{"email": user.Email})
-		defer cancel()
 		if err != nil {
-			log.Panic(err)
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		if count > 0 {
+		count2, err := UserCollec.CountDocuments(ctx, bson.M{"username": user.Username})
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		if count > 0 || count2 > 0 {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error: this email or username already exists", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 		password := HashPassword(user.Password)
@@ -86,7 +90,6 @@ func Signup() gin.HandlerFunc {
 
 			return
 		}
-		defer cancel()
 		result := bson.M{
 			"user_id": new_usr.User_id,
 			"_id":     fin.InsertedID,
@@ -126,13 +129,35 @@ func Login() gin.HandlerFunc {
 }
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		userId := c.Param("userId")
+		// secret_key := os.Getenv("SECRET_KEY")
+
+		// token_val := c.GetHeader("Authorization")
+		// if token_val == "" {
+		// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access"})
+		// 	return
+		// }
+		// token, err := jwt.Parse(strings.Replace(token_val, "Bearer ", "", 1), func(token *jwt.Token) (interface{}, error) {
+		// 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		// 		return nil, fmt.Errorf("invalid token")
+		// 	}
+		// 	return []byte(secret_key), nil
+		// })
+		// if err != nil {
+		// 	c.JSON(http.StatusUnauthorized, responses.UserResponse{Status: http.StatusUnauthorized, Message: "error: unauthorized", Data: map[string]interface{}{"data": err.Error()}})
+		// 	return
+		// }
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		username := c.Param("username")
 		var user models.User
 		defer cancel()
 		// objId, _ := primitive.ObjectIDFromHex(userId)
-		filter := bson.M{"user_id": userId}
-		err := UserCollec.FindOne(ctx, bson.M{"user_id": filter}).Decode(&user)
+		// claims, ok := token.Claims.(jwt.MapClaims)
+		// if !ok || claims["username"].(string) != username {
+		// c.JSON(http.StatusUnauthorized, responses.UserResponse{Status: http.StatusUnauthorized, Message: "error: unauthorized", Data: map[string]interface{}{"data": err.Error()}})
+		// return
+		// }
+		filter := bson.M{"username": username}
+		err := UserCollec.FindOne(ctx, filter).Decode(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
