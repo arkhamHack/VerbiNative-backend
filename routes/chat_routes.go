@@ -10,6 +10,6 @@ func ChatRoutes(router *gin.Engine) {
 
 	router.GET("/chat/:username", api.ChatHandler)
 	router.GET("/chat/:username/channels", api.UserChannelHandler)
-	router.GET("/users", api.UserHandler)
+	router.GET("/chat/users", api.UserHandler)
 
 }

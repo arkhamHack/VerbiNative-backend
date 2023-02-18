@@ -22,6 +22,7 @@ type Usr_chat struct {
 	StopListenerChan chan struct{}
 	Listening        bool
 	MessageChan      chan redis.Message
+	Created_by       string `json:"created_by,omitempty"`
 }
 
 func (usr *Usr_chat) Subscribe(rdb *redis.Client, channel string) error {

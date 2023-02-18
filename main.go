@@ -30,24 +30,21 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
-	//configs.ConnectDB()
-	//routes.UserRoute(router)
-	// corsMiddleware := cors.New(cors.Options{
-	// 	AllowedOrigins:   []string{"http://localhost:3000"},
-	// 	AllowCredentials: true,
-	// 	Debug:            true,
-	// })
-	//router.Use(middleware.Authentication())
+	routes.UserRoute(router)
+	authRoutes := router.Group("/user")
+	authRoutes.Use(middleware.Authentication())
 	// router.Use(corsMiddleware.Handler)
 
-	//router.Use(middleware.CORSMiddleware())
+	authRoutes.Use(middleware.CORSMiddleware())
 	// router.GET("/", func(ctx *gin.Context) {
 	// 	ctx.JSON(200, gin.H{
 	// 		"data": "GIN",
 	// 	})
 	// })
-	router.Use(middleware.RedisMiddleware())
 	routes.ChatRoutes(router)
+	chatRouter := router.Group("/chat")
+	chatRouter.Use(middleware.RedisMiddleware())
+
 	router.GET("/api-1", func(c *gin.Context) {
 
 		c.JSON(200, gin.H{"success": "Access granted for api-1"})
@@ -60,14 +57,6 @@ func main() {
 	})
 
 	router.Run("localhost:8080")
-	// rdb = redis.NewClient(&redis.Options{Addr: "localhost:6379"})
-
-	// r := mux.NewRouter()
-
-	// r.Path("/chat").Methods("GET").HandlerFunc(api.H(rdb, api.ChatHandler))
-	// r.Path("/user/{user}/channels").Methods("GET").HandlerFunc(api.H(rdb, api.UserChannelHandler))
-	// r.Path("/users").Methods("GET").HandlerFunc(api.H(rdb, api.UserHandler))
-
 	// port := ":" + os.Getenv("PORT")
 	// if port == ":" {
 	// 	port = ":8080"
