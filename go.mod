@@ -6,6 +6,7 @@ require github.com/go-playground/validator v9.31.0+incompatible
 
 require (
 	github.com/gin-contrib/cors v1.4.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/rs/cors v1.8.3 // indirect
 )
 

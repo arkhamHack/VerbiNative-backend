@@ -13,6 +13,7 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -78,8 +79,18 @@ func Signup() gin.HandlerFunc {
 			Email:    user.Email,
 			Region:   user.Region,
 			Password: password,
+			User_id:  uuid.New().String(),
 		}
-		new_usr.User_id = new_usr.Id.Hex()
+		//new_usr.User_id = new_usr.Id.Hex()
+		// index := mongo.IndexModel{
+		// 	Keys:    bson.M{"user_id": 1},
+		// 	Options: options.Index().SetUnique(true),
+		// }
+		// _, err = UserCollec.Indexes().CreateOne(ctx, index)
+		// if err != nil {
+		// 	c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+		// 	return
+		// }
 		new_usr.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		token, refresh_token, _ := helpers.GenerateAllTokens(new_usr.Username, new_usr.Email, new_usr.User_id, new_usr.Region)
 		new_usr.Token = token
@@ -91,9 +102,11 @@ func Signup() gin.HandlerFunc {
 			return
 		}
 		result := bson.M{
-			"user_id": new_usr.User_id,
-			"_id":     fin.InsertedID,
-			"email":   new_usr.Email,
+			"user_id":  new_usr.User_id,
+			"_id":      fin.InsertedID,
+			"email":    new_usr.Email,
+			"username": new_usr.Username,
+			"language": new_usr.Language,
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": result}})
 	}

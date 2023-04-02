@@ -6,11 +6,15 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/controllers"
 	"github.com/arkhamHack/VerbiNative-backend/models"
+	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var upgrader websocket.Upgrader
@@ -185,18 +189,37 @@ func lang_conv(text string) string {
 }
 
 func ChanMsg(ws *websocket.Conn, c *gin.Context) {
-	username := c.Param("username")
+	username := c.Param("username") //change this to userid
+	//databaseRef:=fireba
 	usr := connected_users[username]
+	var user bson.M
+	filter := bson.M{"username": usr}
+	var UserCollec *mongo.Collection = configs.GetCollec(configs.Mongo_DB, "users")
+	err := UserCollec.FindOne(c, filter).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+		return
+
+	}
+	usrname := user["username"].(string)
 	go func() {
 		for msgch := range usr.MessageChan {
 			msg := models.Message{
-				Text:    msgch.Payload,
-				Channel: msgch.Channel,
+
+				//Command: msgch.,
+				Text:     msgch.Payload,
+				Channel:  msgch.Channel,
+				Username: usrname,
+				//Created_by:
 				//Translation: lang_conv(msgch.Payload),
 			}
 			if err := ws.WriteJSON(msg); err != nil {
 				fmt.Println(err)
 			}
+			// err := controllers.FirebaseConn(usrname, msgch.Payload, msgch.Payload, time.Now())
+			// if err != nil {
+			// 	fmt.Println(err)
+			// }
 		}
 
 	}()

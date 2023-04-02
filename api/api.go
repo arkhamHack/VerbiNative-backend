@@ -9,28 +9,9 @@ import (
 	"github.com/go-redis/redis"
 )
 
-// func Errhandle(err error, w http.ResponseWriter) {
-// 	w.WriteHeader(http.StatusBadRequest)
-// 	w.Write([]byte(fmt.Sprintf(`{"err": "%s"}`, err.Error())))
-// }
-
 func Errhandle(err error, c *gin.Context) {
 	c.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
 }
-
-// func UserChannelHandler(w http.ResponseWriter, r *http.Request, rdb *redis.Client) {
-// 	username := mux.Vars(r)["user"]
-// 	list, err := controllers.GetChanList(rdb, username)
-// 	if err != nil {
-// 		Errhandle(err, w)
-// 		return
-// 	}
-// 	err = json.NewEncoder(w).Encode(list)
-// 	if err != nil {
-// 		Errhandle(err, w)
-// 		return
-// 	}
-// }
 
 func UserChannelHandler(c *gin.Context) {
 	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
