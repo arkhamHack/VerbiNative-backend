@@ -25,4 +25,5 @@ type Msg struct {
 type Chatroom struct {
 	Chatroom_id string `json:"chatroom_id,omitempty" validate:"required"`
 	Messages    []Msg
+	Users       []User
 }
