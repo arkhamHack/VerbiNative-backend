@@ -24,6 +24,8 @@ type Usr_chat struct {
 	MessageChan      chan redis.Message
 	Created_by       string `json:"created_by,omitempty"`
 }
+type Chatroom struct {
+}
 
 func (usr *Usr_chat) Subscribe(rdb *redis.Client, channel string) error {
 	usr_channels_key := fmt.Sprintf(Usr_channel_fmt, usr.Username)

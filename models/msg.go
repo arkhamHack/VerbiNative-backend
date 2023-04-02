@@ -14,10 +14,15 @@ type Message struct {
 }
 
 type Msg struct {
-	Chatroom_id string    `json:"chatroom_id,omitempty" validate:"required"`
+	// Chatroom_id string    `json:"chatroom_id,omitempty" validate:"required"`
 	Created_by  string    `json:"created_by,omitempty" validate:"required"`
 	Text        string    `json:"text,omitempty" validate:"required"`
 	Timestamp   time.Time `json:"timestamp,omitempty" validate:"required"`
 	Translation string    `json:"translation,omitempty" validate:"required"`
 	MsgId       string    `json:"msgId,omitempty" validate:"required"`
+}
+
+type Chatroom struct {
+	Chatroom_id string `json:"chatroom_id,omitempty" validate:"required"`
+	Messages    []Msg
 }
