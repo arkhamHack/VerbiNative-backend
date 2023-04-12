@@ -1,4 +1,4 @@
-package controllers
+package messages
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/arkhamHack/VerbiNative-backend/models"
 	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -39,7 +38,7 @@ import (
 // 	fmt.Printf("Added message with ID: %v\n", docRef.MsgId)
 // }
 
-func MsgfetchCache(ctx context.Context, chatroomId string, rdb *redis.Client) ([]*models.Msg, error) {
+func MsgfetchCache(ctx context.Context, chatroomId string, rdb *redis.Client) ([]*Msg, error) {
 	msg_ids, err := rdb.ZRangeByScore(ctx, "chat:"+chatroomId, &redis.ZRangeBy{
 		Min: "-inf",
 		Max: "+inf",
@@ -47,13 +46,13 @@ func MsgfetchCache(ctx context.Context, chatroomId string, rdb *redis.Client) ([
 	if err != nil {
 		return nil, err
 	}
-	var msgs []*models.Msg
+	var msgs []*Msg
 	for _, msg_id := range msg_ids {
 		msg_bytes, err := rdb.Get(ctx, msg_id).Bytes()
 		if err != nil {
 			return nil, err
 		}
-		var msg models.Msg
+		var msg Msg
 		err = json.Unmarshal(msg_bytes, &msg)
 		if err != nil {
 			return nil, err
@@ -65,7 +64,7 @@ func MsgfetchCache(ctx context.Context, chatroomId string, rdb *redis.Client) ([
 
 }
 
-func storeInCache(ctx context.Context, msg *models.Msg, rdb *redis.Client) error {
+func storeInCache(ctx context.Context, msg *Msg, rdb *redis.Client) error {
 	msg_bytes, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -83,7 +82,7 @@ func storeInCache(ctx context.Context, msg *models.Msg, rdb *redis.Client) error
 }
 
 func CreateMessage(c *gin.Context, rdb *redis.Client) {
-	var msg models.Msg
+	var msg Msg
 	err := c.BindJSON(&msg)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"err": err}})

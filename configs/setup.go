@@ -44,20 +44,8 @@ func GetCollec(client *mongo.Client, collec_name string) *mongo.Collection {
 	return collection
 }
 
-// func RedisConn() *redis.Client {
-// 	redisURL := os.Getenv("REDIS_URL")
-// 	if redisURL == "" {
-// 		log.Fatal("REDIS_URL environment variable not set")
-// 	}
-// 	opt, err := redis.ParseURL(redisURL)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	rdb := redis.NewClient(opt)
-
-// 	_, err = rdb.Ping().Result()
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	return rdb
+// func GetChats(client *mongo.Client, collec_name string) *mongo.Collection {
+// 	fmt.Println("Check 1")
+// 	collection := client.Database("chats").Collection(collec_name)
+// 	return collection
 // }

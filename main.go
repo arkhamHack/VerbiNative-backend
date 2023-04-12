@@ -1,9 +1,11 @@
 package main
 
 import (
+	"github.com/arkhamHack/VerbiNative-backend/users"
+
+	"github.com/arkhamHack/VerbiNative-backend/chatroom"
 	"github.com/arkhamHack/VerbiNative-backend/controllers"
 	"github.com/arkhamHack/VerbiNative-backend/middleware"
-	"github.com/arkhamHack/VerbiNative-backend/routes"
 
 	"github.com/gin-gonic/gin"
 
@@ -30,7 +32,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
-	routes.UserRoute(router)
+	users.UserRoute(router)
 	authRoutes := router.Group("/user")
 	authRoutes.Use(middleware.Authentication())
 	// router.Use(corsMiddleware.Handler)
@@ -41,7 +43,7 @@ func main() {
 	// 		"data": "GIN",
 	// 	})
 	// })
-	routes.ChatRoutes(router)
+	chatroom.ChatRoutes(router)
 	chatRouter := router.Group("/chat")
 	chatRouter.Use(middleware.RedisMiddleware())
 

@@ -1,4 +1,4 @@
-package controllers
+package users
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/helpers"
-	"github.com/arkhamHack/VerbiNative-backend/models"
 	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
@@ -46,7 +45,7 @@ var validate = validator.New()
 func Signup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-		var user models.User
+		var user User
 		defer cancel()
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -73,24 +72,16 @@ func Signup() gin.HandlerFunc {
 			return
 		}
 		password := HashPassword(user.Password)
-		new_usr := models.User{
+		new_usr := User{
 			Id:       primitive.NewObjectID(),
 			Username: user.Username,
 			Email:    user.Email,
 			Region:   user.Region,
+			Language: user.Language,
 			Password: password,
 			User_id:  uuid.New().String(),
 		}
-		//new_usr.User_id = new_usr.Id.Hex()
-		// index := mongo.IndexModel{
-		// 	Keys:    bson.M{"user_id": 1},
-		// 	Options: options.Index().SetUnique(true),
-		// }
-		// _, err = UserCollec.Indexes().CreateOne(ctx, index)
-		// if err != nil {
-		// 	c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-		// 	return
-		// }
+
 		new_usr.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		token, refresh_token, _ := helpers.GenerateAllTokens(new_usr.Username, new_usr.Email, new_usr.User_id, new_usr.Region)
 		new_usr.Token = token
@@ -107,6 +98,7 @@ func Signup() gin.HandlerFunc {
 			"email":    new_usr.Email,
 			"username": new_usr.Username,
 			"language": new_usr.Language,
+			"region":   new_usr.Region,
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": result}})
 	}
@@ -116,8 +108,8 @@ func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		// userId := c.Param("userId")
-		var user models.User
-		var usr_found models.User
+		var user User
+		var usr_found User
 		defer cancel()
 		// objId, _ := primitive.ObjectIDFromHex(userId)
 		if err := c.BindJSON(&user); err != nil {
@@ -161,7 +153,7 @@ func GetUser() gin.HandlerFunc {
 		// }
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		username := c.Param("username")
-		var user models.User
+		var user User
 		defer cancel()
 		// objId, _ := primitive.ObjectIDFromHex(userId)
 		// claims, ok := token.Claims.(jwt.MapClaims)
@@ -183,7 +175,7 @@ func EditUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		userId := c.Param("userId")
-		var user models.User
+		var user User
 		defer cancel()
 		objId, _ := primitive.ObjectIDFromHex(userId)
 		if err := c.BindJSON(&user); err != nil {
@@ -200,7 +192,7 @@ func EditUser() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"error": err.Error()}})
 			return
 		}
-		var updated_user models.User
+		var updated_user User
 
 		if fin.MatchedCount == 1 {
 			err := UserCollec.FindOne(ctx, bson.M{"_id": objId}).Decode(&updated_user)

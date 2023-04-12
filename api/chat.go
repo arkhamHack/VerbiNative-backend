@@ -8,7 +8,8 @@ import (
 
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/controllers"
-	"github.com/arkhamHack/VerbiNative-backend/models"
+	"github.com/arkhamHack/VerbiNative-backend/messages"
+
 	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -48,7 +49,7 @@ func H(rdb *redis.Client, fn func(http.ResponseWriter, *http.Request, *redis.Cli
 // }
 
 func webSockErrHandle(err error, ws *websocket.Conn) {
-	_ = ws.WriteJSON(models.Message{Err: err.Error()})
+	_ = ws.WriteJSON(messages.Message{Err: err.Error()})
 }
 
 func ChatHandler(c *gin.Context) {
@@ -144,7 +145,7 @@ func Disconnect(c *gin.Context, rdb *redis.Client, ws *websocket.Conn) chan stru
 
 func UserMsg(c *gin.Context, rdb *redis.Client, ws *websocket.Conn) {
 	log.Println("Readin bitch")
-	var msg models.Message
+	var msg messages.Message
 	if err := ws.ReadJSON(&msg); err != nil {
 		webSockErrHandle(err, ws)
 		return
@@ -204,7 +205,7 @@ func ChanMsg(ws *websocket.Conn, c *gin.Context) {
 	usrname := user["username"].(string)
 	go func() {
 		for msgch := range usr.MessageChan {
-			msg := models.Message{
+			msg := messages.Message{
 
 				//Command: msgch.,
 				Text:     msgch.Payload,

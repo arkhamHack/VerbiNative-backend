@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/arkhamHack/VerbiNative-backend/controllers"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 )
@@ -24,19 +25,6 @@ func UserChannelHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
-// func UserHandler(w http.ResponseWriter, r *http.Request, rdb *redis.Client) {
-// 	list, err := controllers.List(rdb)
-// 	if err != nil {
-// 		Errhandle(err, w)
-// 		return
-// 	}
-// 	err = json.NewEncoder(w).Encode(list)
-// 	if err != nil {
-// 		Errhandle(err, w)
-// 		return
-// 	}
-// }
-
 func UserHandler(c *gin.Context) {
 
 	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
@@ -51,3 +39,18 @@ func UserHandler(c *gin.Context) {
 		return
 	}
 }
+
+// func ChatroomHandler(c *gin.Context) {
+// 	upgrader := websocket.Upgrader{WriteBufferSize: 1024, ReadBufferSize: 1024, CheckOrigin: func(r *http.Request) bool {
+// 		return true
+// 	}}
+// 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+// 	if err != nil {
+// 		log.Println(err)
+// 		return
+// 	}
+// 	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+// 	chatroomId := c.Param("chatroom_id")
+// 	go ChatroomHandler.HandleChatrooms(ws, chatroomId)
+
+// }
