@@ -281,3 +281,8 @@ func ChatMessenger() gin.HandlerFunc {
 		chatroomHandler.HandleChatrooms(c.Writer, c.Request, chatroomId, userId)
 	}
 }
+
+func generateCDNMediaUrl(mediaData []MediaFile)[]string
+{
+	
+}
