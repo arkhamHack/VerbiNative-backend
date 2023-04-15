@@ -282,7 +282,7 @@ func ChatMessenger() gin.HandlerFunc {
 	}
 }
 
-func generateCDNMediaUrl(mediaData []MediaFile)[]string
-{
-	
-}
+// func generateCDNMediaUrl(mediaData []MediaFile)[]string
+// {
+
+// }
