@@ -44,8 +44,8 @@ func main() {
 	// 	})
 	// })
 	chatroom.ChatRoutes(router)
-	chatRouter := router.Group("/chat")
-	chatRouter.Use(middleware.RedisMiddleware())
+	// chatRouter := router.Group("/chat")
+	// chatRouter.Use(middleware.RedisMiddleware())
 
 	router.GET("/api-1", func(c *gin.Context) {
 

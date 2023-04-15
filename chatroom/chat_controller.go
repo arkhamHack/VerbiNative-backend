@@ -11,7 +11,8 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/messages"
 	"github.com/arkhamHack/VerbiNative-backend/responses"
-	"github.com/arkhamHack/VerbiNative-backend/users"
+
+	//	"github.com/arkhamHack/VerbiNative-backend/users"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	"github.com/google/uuid"
@@ -32,9 +33,9 @@ type ChatroomHandler struct {
 	Chatrooms map[string]*Chatroom
 }
 
-func (c *Chatroom) RegisterUser(conn *websocket.Conn) {
-	c.Users[conn] = true
-}
+//	func (c *Chatroom) RegisterUser(conn *websocket.Conn) {
+//		c.Users[conn] = true
+//	}
 func NewChatroomManager() *ChatroomHandler {
 	return &ChatroomHandler{
 		Chatrooms: make(map[string]*Chatroom),
@@ -48,17 +49,17 @@ func NewChatroomManager() *ChatroomHandler {
 //			close(conn.WriteMessage(websocket.CloseMessage, []byte{}))
 //		}
 //	}
-func (c *Chatroom) BroadcastMessage(msg messages.Msg) {
-	c.Messages = append(c.Messages, msg)
-	for conn := range c.Users {
-		err := conn.WriteJSON(msg)
-		if err != nil {
-			log.Printf("error: %v", err)
-			c.Unregister <- conn
-		}
-	}
+// func (c *Chatroom) BroadcastMessage(msg messages.Msg) {
+// 	c.Messages = append(c.Messages, msg)
+// 	for conn := range c.Users {
+// 		err := conn.WriteJSON(msg)
+// 		if err != nil {
+// 			log.Printf("error: %v", err)
+// 			c.Unregister <- conn
+// 		}
+// 	}
 
-}
+// }
 
 // func (c *ChatroomHandler) HandleChatrooms(ws *websocket.Conn, chatroomId string) {
 // 	if _, ok := c.Chatrooms[chatroomId]; !ok {
@@ -83,12 +84,12 @@ func (ch *ChatroomHandler) HandleChatrooms(w http.ResponseWriter, r *http.Reques
 	}
 	if _, ok := ch.Chatrooms[chatroomId]; !ok {
 		ch.Chatrooms[chatroomId] = &Chatroom{
-			Chatroom_id:    chatroomId,
-			Chatroom_users: []users.User{},
-			Messages:       []messages.Msg{},
-			Broadcast:      make(chan messages.Msg),
-			Register:       make(chan *websocket.Conn),
-			Unregister:     make(chan *websocket.Conn),
+			Chatroom_id: chatroomId,
+			User_ids:    []string{},
+			//Messages:       []messages.Msg{},
+			Broadcast:  make(chan messages.Msg),
+			Register:   make(chan *websocket.Conn),
+			Unregister: make(chan *websocket.Conn),
 		}
 		go func() {
 			for {
@@ -138,21 +139,22 @@ func (ch *ChatroomHandler) HandleChatrooms(w http.ResponseWriter, r *http.Reques
 func CreateChatroom() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-		var chatroom Chatroom
+		var chatroom ChatroomSummary
 		defer cancel()
 		if err := c.BindJSON(&chatroom); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		validate_err := validate.Struct(&chatroom)
+		chat_stored := ChatroomSummary{
+			Chatroom_id: uuid.New().String(),
+			Name:        chatroom.Name,
+			User_ids:    chatroom.User_ids,
+			Messages:    chatroom.Messages,
+		}
+		validate_err := validate.Struct(&chat_stored)
 		if validate_err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "validation error", Data: map[string]interface{}{"data": validate_err.Error()}})
 			return
-		}
-		chat_stored := Chatroom{
-			Chatroom_id:    uuid.New().String(),
-			Name:           chatroom.Name,
-			Chatroom_users: chatroom.Chatroom_users,
 		}
 		fin, err := ChatCollec.InsertOne(ctx, chat_stored)
 		if err != nil {
@@ -162,7 +164,7 @@ func CreateChatroom() gin.HandlerFunc {
 		result := bson.M{
 			"chatroom_id": chat_stored.Chatroom_id,
 			"_id":         fin.InsertedID,
-			"name":        chat_stored.Chatroom_users,
+			"name":        chat_stored.Name,
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": result}})
 
@@ -187,19 +189,23 @@ func JoinChat() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		chat := c.Param("chatroomId")
-		user := c.Param("userId")
-		var chatr Chatroom
+		//user := c.Param("userId")
+		type User struct {
+			UserID string `json:"user_id"`
+		}
+		var user User
+		var chatr ChatroomSummary
 		defer cancel()
-		if err := c.BindJSON(&chat); err != nil {
+		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		if validate_err := validate.Struct(&chat); validate_err != nil {
+		if validate_err := validate.Struct(&user); validate_err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"validation error": validate_err.Error()}})
 			return
 		}
 		filter := bson.M{"chatroom_id": chat}
-		update := bson.M{"$addtoset": bson.M{"users": user}}
+		update := bson.M{"$addToSet": bson.M{"user_ids": user.UserID}}
 		err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&chatr)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -214,9 +220,17 @@ func GetAllChats() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		user := c.Param("userId")
-		var chat []Chatroom
+		var chat []ChatroomSummary
 		defer cancel()
-		pipeline := bson.A{bson.M{"$match": bson.M{"users": bson.M{"$in": bson.A{user}}}}}
+		pipeline := bson.A{
+			bson.M{
+				"$match": bson.M{
+					"user_ids": bson.M{
+						"$in": bson.A{user},
+					},
+				},
+			},
+		}
 		coll, err := ChatCollec.Aggregate(ctx, pipeline)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -250,7 +264,7 @@ func UpdateChat(chatroomId string, message messages.Msg) error {
 	// 	return
 	// }
 	filter := bson.M{"chatroom_id": chatroomId}
-	update := bson.M{"$addtoset": bson.M{"messages": message}}
+	update := bson.M{"$addToSet": bson.M{"messages": message}}
 	err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&chatr)
 	if err != nil {
 		return err
