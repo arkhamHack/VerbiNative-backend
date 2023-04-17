@@ -11,33 +11,6 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-// func FirebaseConn(user_id string, txt string, translation string, timestamp time.Time) err.Error {
-
-// 	opt := option.WithCredentialsFile("/home/kraken/Downloads/verbinative-firebase-adminsdk-pljdj-9ce1acc0d9.json")
-// 	app, err := firebase.NewApp(context.Background(), nil, opt)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error initializing app: %v", err)
-// 	}
-// 	client, err := app.FireStore(context.Background())
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error while fetching Firestore client ", err)
-// 	}
-// 	//query := client.Collection("messages").OrderBy("Timestamp", firestore.Descending).Limit(10)
-// 	msg := models.Firebase_Msg{
-// 		Created_by:  user_id,
-// 		Text:        txt,
-// 		Translation: translation,
-// 		Timestamp:   timestamp,
-// 		//MessageId:
-// 	}
-// 	ref, _, err := client.Collection("messages").Add(context.Background(), msg)
-// 	if err != nil {
-// 		log.Fatal("error adding message to Firestore: %v\n", err)
-// 	}
-
-// 	fmt.Printf("Added message with ID: %v\n", docRef.MsgId)
-// }
-
 func MsgfetchCache(ctx context.Context, chatroomId string, rdb *redis.Client) ([]*Msg, error) {
 	msg_ids, err := rdb.ZRangeByScore(ctx, "chat:"+chatroomId, &redis.ZRangeBy{
 		Min: "-inf",

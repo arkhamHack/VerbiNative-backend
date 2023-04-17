@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/arkhamHack/VerbiNative-backend/helpers"
@@ -33,6 +34,8 @@ func Authentication() gin.HandlerFunc {
 }
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//header.Add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		fmt.Print("CORS FUnc Called")
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
