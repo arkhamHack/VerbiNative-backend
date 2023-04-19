@@ -152,8 +152,7 @@ func GetUser() gin.HandlerFunc {
 		// 	return
 		// }
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-		username := c.Param("username")
-		var user User
+		username := c.Query("username")
 		defer cancel()
 		// objId, _ := primitive.ObjectIDFromHex(userId)
 		// claims, ok := token.Claims.(jwt.MapClaims)
@@ -161,13 +160,24 @@ func GetUser() gin.HandlerFunc {
 		// c.JSON(http.StatusUnauthorized, responses.UserResponse{Status: http.StatusUnauthorized, Message: "error: unauthorized", Data: map[string]interface{}{"data": err.Error()}})
 		// return
 		// }
-		filter := bson.M{"username": username}
-		err := UserCollec.FindOne(ctx, filter).Decode(&user)
+		regex_pattern := bson.M{"$regex": primitive.Regex{Pattern: username, Options: "i"}}
+		var matching_users []User
+		filter := bson.M{"username": regex_pattern}
+		coll, err := UserCollec.Find(ctx, filter)
+		for coll.Next(ctx) {
+			var potential_user User
+			err := coll.Decode(&potential_user)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err}})
+				return
+			}
+			matching_users = append(matching_users, potential_user)
+		}
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": matching_users}})
 	}
 }
 
@@ -225,5 +235,35 @@ func DeleteUser() gin.HandlerFunc {
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User deleted successfully."}})
 
+	}
+}
+
+func GetByRegion() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		region := c.Param("region")
+		var user []User
+		defer cancel()
+		pipeline := bson.A{
+			bson.M{
+				"$match": bson.M{
+					"region": bson.M{
+						"$in": bson.A{region},
+					},
+				},
+			},
+		}
+		coll, err := UserCollec.Aggregate(ctx, pipeline)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		err = coll.All(ctx, &user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
 	}
 }
