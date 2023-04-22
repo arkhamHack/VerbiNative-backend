@@ -26,7 +26,7 @@ func NewWebSocketClient(ws *websocket.Conn, userid string) WebSocketClient {
 func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
 	usr := NewWebSocketClient(ws, userid)
 	mut.Lock()
-	users = append(users, usr)
+	userspool = append(userspool, usr)
 	mut.Unlock()
 	defer func() {
 		if err := recover(); err != nil {
@@ -34,13 +34,13 @@ func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
 		}
 		mut.Lock()
 		defer mut.Unlock()
-		users = Except(users, func(item WebSocketClient) bool {
+		userspool = Except(userspool, func(item WebSocketClient) bool {
 			return item.Id() == usr.Id()
 		})
 		usr.Close()
 	}()
 	usr.Launch(ctx)
-	MemberJoin(users, usr)
+	MemberJoin(userspool, usr)
 	for {
 		select {
 		case msg, ok := <-usr.Listen():
@@ -49,7 +49,7 @@ func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
 			} else {
 				switch msg.Type {
 				case "MESSAGE":
-					NewMessage(users, usr, msg.Content.Text)
+					NewMessage(userspool, usr, msg.Content.Text)
 				default:
 					log.Printf("unknown message type: %s", msg.Type)
 					return
@@ -60,7 +60,7 @@ func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
 			log.Printf("web socket error: %v", err)
 		default:
 		case <-usr.Done():
-			MemberLeave(users, usr)
+			MemberLeave(userspool, usr)
 			return
 		}
 	}

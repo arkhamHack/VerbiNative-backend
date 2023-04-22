@@ -3,14 +3,14 @@ package websockets
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
-	"github.com/arkhamHack/VerbiNative-backend/responses"
+	"github.com/arkhamHack/VerbiNative-backend/users"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/sessions"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -22,8 +22,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 var (
-	mut   sync.Mutex
-	users WebSocketClientsPool
+	mut       sync.Mutex
+	userspool WebSocketClientsPool
 )
 
 func WebSocketConnection() gin.HandlerFunc {
@@ -35,13 +35,13 @@ func WebSocketConnection() gin.HandlerFunc {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		store := sessions.NewCookieStore([]byte(os.Getenv("SECRET_SESSION_KEY")))
-		session, err := store.Get(c.Request, "verbinative-user-session")
+		session, err := users.CookieStorage().Get(c.Request, "verbinative-user-session")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "session error", Data: map[string]interface{}{"data": err}})
-			return
+			log.Fatalln(err)
 		}
-		go StartClient(c, ws, session.Values["userId"].(string))
+		uid := session.Values["userId"]
+
+		go StartClient(c, ws, uid.(string))
 	}
 }
 func (c *webSocketClient) Launch(ctx context.Context) {

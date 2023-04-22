@@ -10,10 +10,10 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/helpers"
 	"github.com/arkhamHack/VerbiNative-backend/responses"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,6 +42,13 @@ func VerifyPassword(user_pwd string, provided_pwd string) (bool, string) {
 var UserCollec *mongo.Collection = configs.GetCollec(configs.Mongo_DB, "users")
 
 var validate = validator.New()
+
+// func CookieStorage() *sessions.CookieStore {
+// 	SecretKey := []byte(os.Getenv("SECRET_SESSION_KEY"))
+// 	cookieStore := sessions.NewCookieStore(SecretKey)
+
+// 	return cookieStore
+// }
 
 func Signup() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -131,11 +138,18 @@ func Login() gin.HandlerFunc {
 		token, refreshToken, _ := helpers.GenerateAllTokens(usr_found.Email, usr_found.Username, usr_found.User_id, usr_found.Region)
 		helpers.UpdateAllTokens(token, refreshToken, usr_found.User_id)
 		fmt.Println(usr_found.User_id)
-		store := sessions.NewCookieStore([]byte("2DB7C624885215DC87B1FAF7517CF8C97E4B95D0FCCE5BDBD28A66F441E6E041"))
-		session, _ := store.Get(c.Request, "verbinative-user-session")
-		session.Values["userId"] = usr_found.User_id
-		session.Save(c.Request, c.Writer)
-
+		// session, err := CookieStorage().Get(c.Request, "verbinative-user-session")
+		// if err != nil {
+		// 	log.Fatalln(err)
+		// }
+		// session.Values["userId"] = usr_found.User_id
+		// err = session.Save(c.Request, c.Writer)
+		session := sessions.Default(c)
+		session.Set("userid", usr_found.User_id)
+		session.Save()
+		if err != nil {
+			return
+		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": usr_found}})
 	}
 }
