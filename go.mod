@@ -8,6 +8,8 @@ require (
 	github.com/cloudflare/cloudflare-go v0.65.0 // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/securecookie v1.1.1 // indirect
+	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.2 // indirect
 	github.com/rs/cors v1.8.3 // indirect

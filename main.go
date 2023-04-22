@@ -33,6 +33,8 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(middleware.CORSMiddleware())
+	//router.Use(middleware.RedisMiddleware())
+
 	users.UserRoute(router)
 	authRoutes := router.Group("/user")
 	authRoutes.Use(middleware.Authentication())
@@ -44,17 +46,6 @@ func main() {
 	// 		"data": "GIN",
 	// 	})
 	// })
-	// rdb := redis.NewClient(&redis.Options{
-	// 	Addr:     "localhost:6379",
-	// 	Password: "", // no password set
-	// 	DB:       0,  // use default DB
-	// })
-	// pong, err := rdb.Ping().Result()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println("Redis Connected")
-	// fmt.Println(pong, err)
 
 	chatroom.ChatRoutes(router)
 	// chatRouter := router.Group("/chat")

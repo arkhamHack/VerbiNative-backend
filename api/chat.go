@@ -205,11 +205,11 @@ func ChanMsg(ws *websocket.Conn, c *gin.Context) {
 	usrname := user["username"].(string)
 	go func() {
 		for msgch := range usr.MessageChan {
-			msg := messages.Message{
+			msg := messages.Msg{
 
 				//Command: msgch.,
-				Text:     msgch.Payload,
-				Channel:  msgch.Channel,
+				Text: msgch.Payload,
+				//Channel:  msgch.Channel,
 				Username: usrname,
 				//Created_by:
 				//Translation: lang_conv(msgch.Payload),

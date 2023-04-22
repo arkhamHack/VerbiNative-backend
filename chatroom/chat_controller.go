@@ -75,6 +75,15 @@ func NewChatroomManager() *ChatroomHandler {
 // 	c.
 
 // }
+func ChatMessenger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fmt.Print("func called")
+		chatroomId := c.Param("chatroomId")
+		userId := c.Param("userId")
+		chatroomHandler := &ChatroomHandler{}
+		chatroomHandler.HandleChatrooms(c.Writer, c.Request, chatroomId, userId)
+	}
+}
 
 func (ch *ChatroomHandler) HandleChatrooms(w http.ResponseWriter, r *http.Request, chatroomId string, userId string) {
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -91,14 +100,7 @@ func (ch *ChatroomHandler) HandleChatrooms(w http.ResponseWriter, r *http.Reques
 			Register:   make(chan *websocket.Conn),
 			Unregister: make(chan *websocket.Conn),
 		}
-		go func() {
-			for {
-				select {
-				case conn := <-ch.Chatrooms[chatroomId].Unregister:
-					conn.Close()
-				}
-			}
-		}()
+
 	}
 	ch.Chatrooms[chatroomId].Register <- ws
 	go func() {
@@ -271,15 +273,6 @@ func UpdateChat(chatroomId string, message messages.Msg) error {
 	}
 	fmt.Println(chatr)
 	return nil
-}
-
-func ChatMessenger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		chatroomId := c.Param("chatroomId")
-		userId := c.Param("userId")
-		chatroomHandler := &ChatroomHandler{}
-		chatroomHandler.HandleChatrooms(c.Writer, c.Request, chatroomId, userId)
-	}
 }
 
 // func generateCDNMediaUrl(mediaData []MediaFile)[]string

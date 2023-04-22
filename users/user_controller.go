@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/arkhamHack/VerbiNative-backend/configs"
@@ -13,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -129,6 +131,11 @@ func Login() gin.HandlerFunc {
 		}
 		token, refreshToken, _ := helpers.GenerateAllTokens(usr_found.Email, usr_found.Username, usr_found.User_id, usr_found.Region)
 		helpers.UpdateAllTokens(token, refreshToken, usr_found.User_id)
+		store := sessions.NewCookieStore([]byte(os.Getenv("SECRET_SESSION_KEY")))
+		session, _ := store.Get(c.Request, "verbinative-user-session")
+		session.Values["userId"] = usr_found.User_id
+		session.Save(c.Request, c.Writer)
+
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": usr_found}})
 	}
 }
