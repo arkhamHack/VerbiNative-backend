@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/arkhamHack/VerbiNative-backend/configs"
@@ -131,7 +130,8 @@ func Login() gin.HandlerFunc {
 		}
 		token, refreshToken, _ := helpers.GenerateAllTokens(usr_found.Email, usr_found.Username, usr_found.User_id, usr_found.Region)
 		helpers.UpdateAllTokens(token, refreshToken, usr_found.User_id)
-		store := sessions.NewCookieStore([]byte(os.Getenv("SECRET_SESSION_KEY")))
+		fmt.Println(usr_found.User_id)
+		store := sessions.NewCookieStore([]byte("2DB7C624885215DC87B1FAF7517CF8C97E4B95D0FCCE5BDBD28A66F441E6E041"))
 		session, _ := store.Get(c.Request, "verbinative-user-session")
 		session.Values["userId"] = usr_found.User_id
 		session.Save(c.Request, c.Writer)

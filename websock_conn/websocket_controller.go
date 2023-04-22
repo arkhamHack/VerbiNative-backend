@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
@@ -29,11 +30,15 @@ func WebSocketConnection() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		//chatroomId := c.Param("chatroomId")
 		//chatroom:=c.Param("chatroomId")
-		store := sessions.NewCookieStore([]byte(os.Getenv("SECRET_SESSION_KEY")))
-		session, err := store.Get(c.Request, "verbinative-user-session")
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		store := sessions.NewCookieStore([]byte(os.Getenv("SECRET_SESSION_KEY")))
+		session, err := store.Get(c.Request, "verbinative-user-session")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "session error", Data: map[string]interface{}{"data": err}})
 			return
 		}
 		go StartClient(c, ws, session.Values["userId"].(string))
