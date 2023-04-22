@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/arkhamHack/VerbiNative-backend/users"
 	"github.com/gin-gonic/gin"
 
 	"github.com/gorilla/websocket"
@@ -35,13 +34,13 @@ func WebSocketConnection() gin.HandlerFunc {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		session, err := users.CookieStorage().Get(c.Request, "verbinative-user-session")
+		//session, err := users.CookieStorage().Get(c.Request, "verbinative-user-session")
 		if err != nil {
 			log.Fatalln(err)
 		}
-		uid := session.Values["userId"]
+		//uid := session.Values["userId"]
 
-		go StartClient(c, ws, uid.(string))
+		go StartClient(c, ws, "123")
 	}
 }
 func (c *webSocketClient) Launch(ctx context.Context) {
