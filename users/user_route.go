@@ -10,6 +10,7 @@ func UserRoute(router *gin.Engine) {
 	router.GET("/user/region/:region", GetByRegion())
 	//router.GET("/user/language/:language", GetByRegion())
 	router.PUT("/user/:userId", EditUser())
+	router.GET("/user/:userId", GetUserDetails())
 	router.DELETE("/user/:userId", DeleteUser())
 	router.POST("/user/signup", Signup())
 	router.POST("/user/login", Login())

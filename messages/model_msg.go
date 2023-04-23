@@ -22,4 +22,5 @@ type Msg struct {
 	Timestamp   time.Time `json:"timestamp,omitempty" validate:"required"`
 	Translation string    `json:"translation,omitempty"`
 	MsgId       string    `json:"msgId" validate:"required"`
+	Member_id   string    `json:"member_id,omitempty"`
 }

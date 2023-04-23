@@ -33,14 +33,6 @@ func WebSocketConnection() gin.HandlerFunc {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		//uid := c.Request.Header.Get("UserId")
-		// log.Println("\nUser id:", uid)
-		// if uid == "" {
-		// 	c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "userid not found", Data: map[string]interface{}{"data": "user od session issue"}})
-		// 	return
-		// }
-		//session, err := users.CookieStorage().Get(c.Request, "verbinative-user-session")
-
 		go StartClient(c, ws, chatroomId)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/arkhamHack/VerbiNative-backend/users"
+	"github.com/arkhamHack/VerbiNative-backend/websockets"
 
 	"github.com/arkhamHack/VerbiNative-backend/chatroom"
 	"github.com/arkhamHack/VerbiNative-backend/controllers"
@@ -26,22 +27,13 @@ func init() {
 var rdb *redis.Client
 
 func main() {
-
-	// client,contxt,cancel,err:=connect("http://localhost:27017")
-	// if err!=nil{
-	// 	panic(err)
-	// }
-
-	// defer close(client,contxt,cancel)
-	// ping(client,contxt)
-
 	router := gin.Default()
 	sessionKey := os.Getenv("SECRET_SESSION_KEY")
 	if sessionKey == "" {
 		log.Fatal("error: set SECRET_SESSION_KEY to a secret string and try again")
 	}
 
-	//router.Use(gin.Logger())
+	router.Use(gin.Logger())
 	router.Use(middleware.CORSMiddleware())
 	store := cookie.NewStore([]byte(sessionKey))
 
@@ -56,23 +48,9 @@ func main() {
 	chatroom.ChatRoutes(router)
 	router.Group("/chat")
 	// chatRouter.Use(middleware.RedisMiddleware(rdb))
-
-	router.GET("/api-1", func(c *gin.Context) {
-
-		c.JSON(200, gin.H{"success": "Access granted for api-1"})
-
-	})
-
-	// API-1
-	router.GET("/api-2", func(c *gin.Context) {
-		c.JSON(200, gin.H{"success": "Access granted for api-2"})
-	})
+	websockets.WebSockRoute(router)
+	router.Group("/ws")
 
 	router.Run("localhost:8080")
-	// port := ":" + os.Getenv("PORT")
-	// if port == ":" {
-	// 	port = ":8080"
-	// }
-	// fmt.Println("chat service started on port", port)
-	// log.Fatal(http.ListenAndServe(port, r))
+
 }

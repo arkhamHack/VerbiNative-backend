@@ -66,12 +66,12 @@ func Signup() gin.HandlerFunc {
 		}
 		count, err := UserCollec.CountDocuments(ctx, bson.M{"email": user.Email})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error: email already registered", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 		count2, err := UserCollec.CountDocuments(ctx, bson.M{"username": user.Username})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error: username already exists", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
@@ -225,7 +225,6 @@ func EditUser() gin.HandlerFunc {
 		userId := c.Param("userId")
 		var user User
 		defer cancel()
-		objId, _ := primitive.ObjectIDFromHex(userId)
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
@@ -235,7 +234,7 @@ func EditUser() gin.HandlerFunc {
 			return
 		}
 		update := bson.M{"username": user.Username, "region": user.Region, "email": user.Email, "password": user.Password}
-		fin, err := UserCollec.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+		fin, err := UserCollec.UpdateOne(ctx, bson.M{"user_id": userId}, bson.M{"$set": update})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"error": err.Error()}})
 			return
@@ -243,7 +242,7 @@ func EditUser() gin.HandlerFunc {
 		var updated_user User
 
 		if fin.MatchedCount == 1 {
-			err := UserCollec.FindOne(ctx, bson.M{"_id": objId}).Decode(&updated_user)
+			err := UserCollec.FindOne(ctx, bson.M{"user_id": userId}).Decode(&updated_user)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 				return
@@ -303,5 +302,22 @@ func GetByRegion() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
+	}
+}
+
+func GetUserDetails() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		userid := c.Param("userId")
+		var user User
+		defer cancel()
+		filter := bson.M{"user_id": userid}
+		err := UserCollec.FindOne(ctx, filter).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err}})
+			return
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
+
 	}
 }

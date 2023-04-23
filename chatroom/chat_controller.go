@@ -2,7 +2,6 @@ package chatroom
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -11,13 +10,11 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/messages"
 	"github.com/arkhamHack/VerbiNative-backend/responses"
-	"github.com/gin-contrib/sessions"
 
 	//	"github.com/arkhamHack/VerbiNative-backend/users"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -25,95 +22,18 @@ import (
 var chatroomMutex sync.Mutex
 var validate = validator.New()
 var ChatCollec *mongo.Collection = configs.GetCollec(configs.Mongo_DB, "servers")
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-type ChatroomHandler struct {
-	Chatrooms map[string]*Chatroom
-}
-
-func NewChatroomManager() *ChatroomHandler {
-	return &ChatroomHandler{
-		Chatrooms: make(map[string]*Chatroom),
-	}
-
-}
-
-// func ChatMessenger() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		fmt.Print("func called")
-// 		chatroomId := c.Param("chatroomId")
-// 		userId := c.Param("userId")
-// 		chatroomHandler := &ChatroomHandler{}
-// 		chatroomHandler.HandleChatrooms(c.Writer, c.Request, chatroomId, userId)
-// 	}
-// }
-
-// func (ch *ChatroomHandler) HandleChatrooms(w http.ResponseWriter, r *http.Request, chatroomId string, userId string) {
-// 	ws, err := upgrader.Upgrade(w, r, nil)
-// 	if err != nil {
-// 		log.Println("Failed to upgrade to WebSocket:", err)
-// 		return
-// 	}
-// 	if _, ok := ch.Chatrooms[chatroomId]; !ok {
-// 		ch.Chatrooms[chatroomId] = &Chatroom{
-// 			Chatroom_id: chatroomId,
-// 			User_ids:    []string{},
-// 			//Messages:       []messages.Msg{},
-// 			Broadcast:  make(chan messages.Msg),
-// 			Register:   make(chan *websocket.Conn),
-// 			Unregister: make(chan *websocket.Conn),
-// 		}
-
-// 	}
-// 	ch.Chatrooms[chatroomId].Register <- ws
-// 	go func() {
-// 		for {
-// 			_, msg, err := ws.ReadMessage()
-// 			if err != nil {
-// 				log.Println("Couldn't read webdocket data")
-// 				break
-// 			}
-// 			msg_data := messages.Msg{
-// 				Created_by: userId,
-// 				Text:       string(msg),
-// 				Timestamp:  time.Now(),
-// 				MsgId:      uuid.New().String(),
-// 			}
-// 			ch.Chatrooms[chatroomId].Broadcast <- msg_data
-// 			err = UpdateChat(chatroomId, msg_data)
-// 			if err != nil {
-// 				log.Println("Failed to save message to MongoDB:", err)
-// 				//c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"error": err.Error()}})
-
-// 			}
-// 		}
-// 	}()
-// 	go func() {
-// 		for {
-// 			_, _, err := ws.ReadMessage()
-// 			if err != nil {
-// 				ch.Chatrooms[chatroomId].Unregister <- ws
-// 				break
-// 			}
-// 		}
-// 	}()
-
-// }
 
 // initially on joining the user will be added to the servers of each major region(country based)->so those are default created chats
 func CreateChatroom() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-		var chatroom ChatroomSummary
+		var chatroom Chatroom
 		defer cancel()
 		if err := c.BindJSON(&chatroom); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		chat_stored := ChatroomSummary{
+		chat_stored := Chatroom{
 			Chatroom_id: uuid.New().String(),
 			Name:        chatroom.Name,
 			User_ids:    chatroom.User_ids,
@@ -141,9 +61,8 @@ func CreateChatroom() gin.HandlerFunc {
 
 func GetChat() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		uid := session.Get("verbinative-userid")
-		log.Println("\nUser id called in chat:", uid)
+		// session := sessions.Default(c)
+		// uid := session.Get("verbinative-userid")
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		chat := c.Param("chatroomId")
 		var chatr Chatroom
@@ -165,7 +84,7 @@ func JoinChat() gin.HandlerFunc {
 			UserID string `json:"user_id"`
 		}
 		var user User
-		var chatr ChatroomSummary
+		var chatr Chatroom
 		defer cancel()
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -191,7 +110,7 @@ func GetAllChats() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		user := c.Param("userId")
-		var chat []ChatroomSummary
+		var chat []Chatroom
 		defer cancel()
 		pipeline := bson.A{
 			bson.M{
@@ -235,24 +154,16 @@ func UpdateChat(chatroomId string, message messages.Msg) error {
 	// 	return
 	// }
 	filter := bson.M{"chatroom_id": chatroomId}
-	update := bson.M{"$addToSet": bson.M{"messages": message}}
+	update := bson.M{}
+	update["$addToSet"] = bson.M{"messages": message}
+	// update["$setOnInsert"] = bson.M{"messages": []interface{}{}}
+	// opts := options.FindOneAndUpdate().SetUpsert(true)
 	err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&chatr)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
-	fmt.Println(chatr)
-	return nil
-}
+	log.Println(chatr)
 
-func UpdateMongo(chatroomId string, m messages.Msg) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-	var message messages.Msg
-	defer cancel()
-	filter := bson.M{"chatroom_id": chatroomId}
-	update := bson.M{"$addToSet": bson.M{"messages": "hi"}}
-	err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&message)
-	if err != nil {
-		return err
-	}
 	return nil
 }

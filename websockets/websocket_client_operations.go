@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 
+	"github.com/arkhamHack/VerbiNative-backend/chatroom"
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/messages"
 	"github.com/google/uuid"
@@ -76,18 +78,22 @@ func NewMessage(users WebSocketClientsPool, usr WebSocketClient, chatroomId stri
 			MsgId:      uuid.NewString(),
 		},
 	})
-	// chatroom.UpdateMongo(chatroomId, messages.Msg{
-	// 	Created_by: usr.Id(),
-	// 	Text:       text,
-	// 	MsgId:      uuid.NewString(),
-	// })
+	err := chatroom.UpdateChat(chatroomId, messages.Msg{
+		Created_by: usr.Id(),
+		Text:       text,
+		MsgId:      uuid.NewString(),
+		Timestamp:  time.Now(),
+	})
+	if err != nil {
+		log.Println("Error while uploading messages to database: ", err)
+	}
 }
 
 func MemberLeave(users WebSocketClientsPool, usr WebSocketClient) {
 	broadcast(users, usr, WebSocketMessages{
 		Type: "MEMBER_LEAVE",
 		Content: messages.Msg{
-			Created_by: usr.Id(),
+			Member_id: usr.Id(),
 		},
 	})
 }
@@ -96,7 +102,7 @@ func MemberJoin(users WebSocketClientsPool, usr WebSocketClient) {
 	broadcast(users, usr, WebSocketMessages{
 		Type: "MEMBER_JOIN",
 		Content: messages.Msg{
-			Created_by: usr.Id(),
+			Member_id: usr.Id(),
 		},
 	})
 
