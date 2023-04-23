@@ -5,15 +5,19 @@ import (
 	"log"
 	"sync"
 
+	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/messages"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var m sync.Mutex
+var ChatCollec *mongo.Collection = configs.GetCollec(configs.Mongo_DB, "servers")
 
-func NewWebSocketClient(ws *websocket.Conn, userid string) WebSocketClient {
+func NewWebSocketClient(ws *websocket.Conn) WebSocketClient {
 	return &webSocketClient{
-		id:   userid,
+		id:   uuid.NewString(),
 		ws:   ws,
 		msgs: make(chan WebSocketMessages),
 		err:  make(chan error),
@@ -21,8 +25,8 @@ func NewWebSocketClient(ws *websocket.Conn, userid string) WebSocketClient {
 	}
 }
 
-func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
-	usr := NewWebSocketClient(ws, userid)
+func StartClient(ctx context.Context, ws *websocket.Conn, chatroomId string) {
+	usr := NewWebSocketClient(ws)
 	mut.Lock()
 	userspool = append(userspool, usr)
 	mut.Unlock()
@@ -47,7 +51,7 @@ func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
 			} else {
 				switch msg.Type {
 				case "MESSAGE":
-					NewMessage(userspool, usr, msg.Content.Text)
+					NewMessage(userspool, usr, chatroomId, msg.Content.Created_by, msg.Content.Text)
 				default:
 					log.Printf("unknown message type: %s", msg.Type)
 					return
@@ -63,14 +67,20 @@ func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
 	}
 }
 
-func NewMessage(users WebSocketClientsPool, usr WebSocketClient, text string) {
+func NewMessage(users WebSocketClientsPool, usr WebSocketClient, chatroomId string, userid string, text string) {
 	broadcast(users, usr, WebSocketMessages{
 		Type: "MESSAGE",
 		Content: messages.Msg{
-			Created_by: usr.Id(),
+			Created_by: userid,
 			Text:       text,
+			MsgId:      uuid.NewString(),
 		},
 	})
+	// chatroom.UpdateMongo(chatroomId, messages.Msg{
+	// 	Created_by: usr.Id(),
+	// 	Text:       text,
+	// 	MsgId:      uuid.NewString(),
+	// })
 }
 
 func MemberLeave(users WebSocketClientsPool, usr WebSocketClient) {
@@ -89,9 +99,11 @@ func MemberJoin(users WebSocketClientsPool, usr WebSocketClient) {
 			Created_by: usr.Id(),
 		},
 	})
+
 }
 
 func broadcast(users WebSocketClientsPool, usr WebSocketClient, msg WebSocketMessages) {
+
 	ForEach(Except(users, func(item WebSocketClient) bool {
 		return item.Id() == usr.Id()
 	}), func(item WebSocketClient) {

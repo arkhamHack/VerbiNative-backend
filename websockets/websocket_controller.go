@@ -3,12 +3,10 @@ package websockets
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 
 	"github.com/gorilla/websocket"
@@ -29,22 +27,21 @@ var (
 func WebSocketConnection() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		//chatroomId := c.Param("chatroomId")
-		//chatroom:=c.Param("chatroomId")
+		chatroomId := c.Param("chatroomId")
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		uid := c.Request.Header.Get("UserId")
-		log.Println("\nUser id:", uid)
-		if uid == "" {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "userid not found", Data: map[string]interface{}{"data": "user od session issue"}})
-			return
-		}
+		//uid := c.Request.Header.Get("UserId")
+		// log.Println("\nUser id:", uid)
+		// if uid == "" {
+		// 	c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "userid not found", Data: map[string]interface{}{"data": "user od session issue"}})
+		// 	return
+		// }
 		//session, err := users.CookieStorage().Get(c.Request, "verbinative-user-session")
 
-		go StartClient(c, ws, uid)
+		go StartClient(c, ws, chatroomId)
 	}
 }
 func (c *webSocketClient) Launch(ctx context.Context) {
