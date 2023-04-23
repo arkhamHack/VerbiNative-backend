@@ -4,10 +4,8 @@ import (
 	"context"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/arkhamHack/VerbiNative-backend/messages"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -58,7 +56,6 @@ func StartClient(ctx context.Context, ws *websocket.Conn, userid string) {
 			}
 		case err := <-usr.Error():
 			log.Printf("web socket error: %v", err)
-		default:
 		case <-usr.Done():
 			MemberLeave(userspool, usr)
 			return
@@ -72,8 +69,6 @@ func NewMessage(users WebSocketClientsPool, usr WebSocketClient, text string) {
 		Content: messages.Msg{
 			Created_by: usr.Id(),
 			Text:       text,
-			Timestamp:  time.Now(),
-			MsgId:      uuid.NewString(),
 		},
 	})
 }

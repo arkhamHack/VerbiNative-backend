@@ -11,6 +11,7 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/messages"
 	"github.com/arkhamHack/VerbiNative-backend/responses"
+	"github.com/gin-contrib/sessions"
 
 	//	"github.com/arkhamHack/VerbiNative-backend/users"
 	"github.com/gin-gonic/gin"
@@ -175,6 +176,9 @@ func CreateChatroom() gin.HandlerFunc {
 
 func GetChat() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		uid := session.Get("verbinative-userid")
+		log.Println("\nUser id called in chat:", uid)
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		chat := c.Param("chatroomId")
 		var chatr Chatroom

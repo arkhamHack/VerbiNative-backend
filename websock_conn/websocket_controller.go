@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/arkhamHack/VerbiNative-backend/responses"
 	"github.com/gin-gonic/gin"
 
 	"github.com/gorilla/websocket"
@@ -27,6 +28,7 @@ var (
 
 func WebSocketConnection() gin.HandlerFunc {
 	return func(c *gin.Context) {
+
 		//chatroomId := c.Param("chatroomId")
 		//chatroom:=c.Param("chatroomId")
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -34,13 +36,15 @@ func WebSocketConnection() gin.HandlerFunc {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		//session, err := users.CookieStorage().Get(c.Request, "verbinative-user-session")
-		if err != nil {
-			log.Fatalln(err)
+		uid := c.Request.Header.Get("UserId")
+		log.Println("\nUser id:", uid)
+		if uid == "" {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "userid not found", Data: map[string]interface{}{"data": "user od session issue"}})
+			return
 		}
-		//uid := session.Values["userId"]
+		//session, err := users.CookieStorage().Get(c.Request, "verbinative-user-session")
 
-		go StartClient(c, ws, "123")
+		go StartClient(c, ws, uid)
 	}
 }
 func (c *webSocketClient) Launch(ctx context.Context) {
@@ -130,7 +134,7 @@ func (c *webSocketClient) Error() <-chan error {
 }
 func (c *webSocketClient) Write(m WebSocketMessages) error {
 	c.mutex.Lock()
-	defer c.mutex.Lock()
+	defer c.mutex.Unlock()
 	c.ws.SetWriteDeadline(time.Now().Add(WriteWait))
 	return c.ws.WriteJSON(m)
 }

@@ -1,12 +1,17 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/arkhamHack/VerbiNative-backend/users"
 
 	"github.com/arkhamHack/VerbiNative-backend/chatroom"
 	"github.com/arkhamHack/VerbiNative-backend/controllers"
 	"github.com/arkhamHack/VerbiNative-backend/middleware"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 
 	"github.com/go-redis/redis"
@@ -30,25 +35,26 @@ func main() {
 	// defer close(client,contxt,cancel)
 	// ping(client,contxt)
 
-	router := gin.New()
-	router.Use(gin.Logger())
+	router := gin.Default()
+	sessionKey := os.Getenv("SECRET_SESSION_KEY")
+	if sessionKey == "" {
+		log.Fatal("error: set SECRET_SESSION_KEY to a secret string and try again")
+	}
+
+	//router.Use(gin.Logger())
 	router.Use(middleware.CORSMiddleware())
+	store := cookie.NewStore([]byte(sessionKey))
+
+	router.Use(sessions.Sessions("verbinative-user-session", store))
+
 	//router.Use(middleware.RedisMiddleware())
 
 	users.UserRoute(router)
 	authRoutes := router.Group("/user")
 	authRoutes.Use(middleware.Authentication())
-	// router.Use(corsMiddleware.Handler)
-
-	//authRoutes.Use(middleware.CORSMiddleware())
-	// router.GET("/", func(ctx *gin.Context) {
-	// 	ctx.JSON(200, gin.H{
-	// 		"data": "GIN",
-	// 	})
-	// })
 
 	chatroom.ChatRoutes(router)
-	// chatRouter := router.Group("/chat")
+	router.Group("/chat")
 	// chatRouter.Use(middleware.RedisMiddleware(rdb))
 
 	router.GET("/api-1", func(c *gin.Context) {

@@ -81,13 +81,14 @@ func Signup() gin.HandlerFunc {
 		}
 		password := HashPassword(user.Password)
 		new_usr := User{
-			Id:       primitive.NewObjectID(),
-			Username: user.Username,
-			Email:    user.Email,
-			Region:   user.Region,
-			Language: user.Language,
-			Password: password,
-			User_id:  uuid.New().String(),
+			Id:          primitive.NewObjectID(),
+			Username:    user.Username,
+			Email:       user.Email,
+			Region:      user.Region,
+			Language:    user.Language,
+			Language_id: user.Language_id,
+			Password:    password,
+			User_id:     uuid.New().String(),
 		}
 
 		new_usr.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -101,19 +102,37 @@ func Signup() gin.HandlerFunc {
 			return
 		}
 		result := bson.M{
-			"user_id":  new_usr.User_id,
-			"_id":      fin.InsertedID,
-			"email":    new_usr.Email,
-			"username": new_usr.Username,
-			"language": new_usr.Language,
-			"region":   new_usr.Region,
+			"user_id":     new_usr.User_id,
+			"_id":         fin.InsertedID,
+			"email":       new_usr.Email,
+			"username":    new_usr.Username,
+			"language":    new_usr.Language,
+			"language_id": new_usr.Language_id,
+			"region":      new_usr.Region,
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": result}})
 	}
 }
+func MyHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		session.Set("key", "value")
+		session.Save()
 
+		c.String(http.StatusOK, "Value stored in session")
+		user := session.Get("key")
+		if user == nil {
+			log.Println("Invalid session token")
+			return
+		}
+		log.Println(user)
+	}
+}
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		session.Set("hi", "123")
+		session.Save()
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		// userId := c.Param("userId")
 		var user User
@@ -137,19 +156,17 @@ func Login() gin.HandlerFunc {
 		}
 		token, refreshToken, _ := helpers.GenerateAllTokens(usr_found.Email, usr_found.Username, usr_found.User_id, usr_found.Region)
 		helpers.UpdateAllTokens(token, refreshToken, usr_found.User_id)
-		fmt.Println(usr_found.User_id)
-		// session, err := CookieStorage().Get(c.Request, "verbinative-user-session")
-		// if err != nil {
-		// 	log.Fatalln(err)
-		// }
-		// session.Values["userId"] = usr_found.User_id
-		// err = session.Save(c.Request, c.Writer)
-		session := sessions.Default(c)
-		session.Set("userid", usr_found.User_id)
-		session.Save()
-		if err != nil {
+		uid_init := usr_found.User_id
+		session.Set("verbinative-userid", uid_init)
+		err_sess := session.Save()
+		uid := session.Get("verbinative-userid")
+		log.Println("\nUser id:", uid)
+		if err_sess != nil {
+			// handle the error
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
+
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": usr_found}})
 	}
 }
