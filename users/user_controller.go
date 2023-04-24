@@ -223,20 +223,24 @@ func EditUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		userId := c.Param("userId")
-		var user User
+		var userUpdate map[string]interface{}
 		defer cancel()
-		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+		if err := c.BindJSON(&userUpdate); err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error: could'nt bind to JSON", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		if validate_err := validate.Struct(&user); validate_err != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"validation error": validate_err.Error()}})
-			return
-		}
-		update := bson.M{"username": user.Username, "region": user.Region, "email": user.Email, "password": user.Password}
-		fin, err := UserCollec.UpdateOne(ctx, bson.M{"user_id": userId}, bson.M{"$set": update})
+		// if validate_err := validate.Struct(&user); validate_err != nil {
+		// 	c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"validation error": validate_err.Error()}})
+		// 	return
+		// }
+		delete(userUpdate, "email")
+		delete(userUpdate, "password")
+		delete(userUpdate, "username")
+		// update := bson.M{"region": user.Region, "language": user.Language, "language_id": user.Language_id, "password": user.Password}
+		update := bson.M{"$set": userUpdate}
+		fin, err := UserCollec.UpdateOne(ctx, bson.M{"user_id": userId}, update)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"error": err.Error()}})
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error:couldn't find user or couldn't update", Data: map[string]interface{}{"error": err.Error()}})
 			return
 		}
 		var updated_user User
@@ -309,15 +313,24 @@ func GetUserDetails() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		userid := c.Param("userId")
-		var user User
 		defer cancel()
 		filter := bson.M{"user_id": userid}
-		err := UserCollec.FindOne(ctx, filter).Decode(&user)
+		coll, err := UserCollec.Find(ctx, filter)
+
+		defer coll.Close(context.Background())
+		var result bson.M
+
+		for coll.Next(context.Background()) {
+			err := coll.Decode(&result)
+			if err != nil {
+				return
+			}
+		}
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err}})
 			return
 		}
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": result}})
 
 	}
 }
