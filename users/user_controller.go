@@ -234,6 +234,7 @@ func EditUser() gin.HandlerFunc {
 		// 	return
 		// }
 		delete(userUpdate, "email")
+		delete(userUpdate, "user_id")
 		delete(userUpdate, "password")
 		delete(userUpdate, "username")
 		// update := bson.M{"region": user.Region, "language": user.Language, "language_id": user.Language_id, "password": user.Password}
