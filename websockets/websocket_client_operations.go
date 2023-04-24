@@ -79,7 +79,7 @@ func NewMessage(users WebSocketClientsPool, usr WebSocketClient, chatroomId stri
 		},
 	})
 	err := chatroom.UpdateChat(chatroomId, messages.Msg{
-		Created_by: usr.Id(),
+		Created_by: userid,
 		Text:       text,
 		MsgId:      uuid.NewString(),
 		Timestamp:  time.Now(),
