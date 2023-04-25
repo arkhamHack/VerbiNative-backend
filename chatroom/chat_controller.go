@@ -181,6 +181,8 @@ func GetMessages() gin.HandlerFunc {
 			limit = l
 		}
 		filter := bson.M{"chatroom_id": chatroom}
+		err := ChatCollec.FindOne(ctx, filter).Decode(&chat)
+		msg_val := len(chat.Messages)
 		projection := bson.M{
 			"messages": bson.M{
 
@@ -188,13 +190,13 @@ func GetMessages() gin.HandlerFunc {
 		}
 		//bson.M{"$subtract": []interface{}{bson.M{"$size": "$messages"}, skip}}
 		opts := options.FindOne().SetProjection(projection)
-		err := ChatCollec.FindOne(ctx, filter, opts).Decode(&chat)
+		err = ChatCollec.FindOne(ctx, filter, opts).Decode(&chat)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"couldn't find chatroom": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"messages": chat.Messages}})
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"messages": chat.Messages, "msg_len": msg_val}})
 
 	}
 }
