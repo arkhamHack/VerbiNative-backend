@@ -38,8 +38,9 @@ func CreateChatroom() gin.HandlerFunc {
 		chat_stored := Chatroom{
 			Chatroom_id: uuid.New().String(),
 			Name:        chatroom.Name,
-			User_ids:    chatroom.User_ids,
+			User:        chatroom.User,
 			Messages:    chatroom.Messages,
+			Msg_len:     0,
 		}
 		validate_err := validate.Struct(&chat_stored)
 		if validate_err != nil {
@@ -55,6 +56,7 @@ func CreateChatroom() gin.HandlerFunc {
 			"chatroom_id": chat_stored.Chatroom_id,
 			"_id":         fin.InsertedID,
 			"name":        chat_stored.Name,
+			"user":        chat_stored.User,
 		}
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": result}})
 
@@ -85,7 +87,8 @@ func JoinChat() gin.HandlerFunc {
 		chat := c.Param("chatroomId")
 		//user := c.Param("userId")
 		type User struct {
-			UserID string `json:"user_id"`
+			UserID   string `json:"user_id"`
+			Username string `json:"username"`
 		}
 		var user User
 		var chatr Chatroom
@@ -99,7 +102,7 @@ func JoinChat() gin.HandlerFunc {
 			return
 		}
 		filter := bson.M{"chatroom_id": chat}
-		update := bson.M{"$addToSet": bson.M{"user_ids": user.UserID}}
+		update := bson.M{"$addToSet": bson.M{"user": bson.M{"user_id": user.UserID, "username": user.Username}}}
 		err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&chatr)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -119,7 +122,7 @@ func GetAllChats() gin.HandlerFunc {
 		pipeline := bson.A{
 			bson.M{
 				"$match": bson.M{
-					"user_ids": bson.M{
+					"user.user_ids": bson.M{
 						"$in": bson.A{user},
 					},
 				},
@@ -152,9 +155,11 @@ func UpdateChat(chatroomId string, message messages.Msg) error {
 
 	filter := bson.M{"chatroom_id": chatroomId}
 	update := bson.M{}
+
 	update["$addToSet"] = bson.M{"messages": message}
-	// update["$setOnInsert"] = bson.M{"messages": []interface{}{}}
-	// opts := options.FindOneAndUpdate().SetUpsert(true)
+	//	update["$set"] = bson.M{"msg_len": bson.M{"$size": "$messages"}}
+	update["$inc"] = bson.M{"msg_len": 1}
+
 	err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&chatr)
 	if err != nil {
 		log.Println(err)
@@ -169,11 +174,12 @@ func GetMessages() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		chatroom := c.Param("chatroomId")
+		var chat1 Chatroom
 		var chat Chatroom
-
 		defer cancel()
 		skip := 0
 		limit := 0
+
 		if s, err := strconv.Atoi(c.Query("skip")); err == nil {
 			skip = s
 		}
@@ -181,7 +187,13 @@ func GetMessages() gin.HandlerFunc {
 			limit = l
 		}
 		filter := bson.M{"chatroom_id": chatroom}
+		err1 := ChatCollec.FindOne(ctx, filter).Decode(&chat1)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"couldn't find chatroom": err1.Error()}})
+			return
+		}
 		projection := bson.M{
+			"msg_len": 1,
 			"messages": bson.M{
 
 				"$slice": []interface{}{bson.M{"$reverseArray": "$messages"}, skip, limit}},
@@ -193,8 +205,7 @@ func GetMessages() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"couldn't find chatroom": err.Error()}})
 			return
 		}
-
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"messages": chat.Messages}})
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"messages": chat.Messages, "msg_len": chat.Msg_len}})
 
 	}
 }
