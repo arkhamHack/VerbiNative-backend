@@ -11,15 +11,4 @@ type Chatroom struct {
 	User_ids    []string       `json:"user_ids" validate:"required"`
 	// User        []map[string]string `json:"user_ids" validate:"required"` //map from userid to username
 	// Type        int                 `json:"type" validate:"required"`     //type defines type of chatroom: 0->Public Chatroom(official),1->Dm,2->Public Chatroom(unofficial)
-
-	// Broadcast   chan messages.Msg
-	// Register    chan *websocket.Conn
-	// Unregister  chan *websocket.Conn
 }
-
-// type ChatroomSummary struct {
-// 	Name        string         `json:"name" validate:"required"`
-// 	Chatroom_id string         `json:"chatroom_id" validate:"required"`
-// 	Messages    []messages.Msg `json:"messages,omitempty"`
-// 	User_ids    []string       `json:"user_ids" validate:"required"`
-// }

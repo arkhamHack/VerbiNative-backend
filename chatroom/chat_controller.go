@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var chatroomMutex sync.Mutex
@@ -73,6 +75,8 @@ func GetChat() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"chatroom": chatr}})
+
 	}
 }
 func JoinChat() gin.HandlerFunc {
@@ -145,14 +149,7 @@ func UpdateChat(chatroomId string, message messages.Msg) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	var chatr Chatroom
 	defer cancel()
-	// if err := c.BindJSON(&chat); err != nil {
-	// 	c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-	// 	return
-	// }
-	// if validate_err := validate.Struct(&chat); validate_err != nil {
-	// 	c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"validation error": validate_err.Error()}})
-	// 	return
-	// }
+
 	filter := bson.M{"chatroom_id": chatroomId}
 	update := bson.M{}
 	update["$addToSet"] = bson.M{"messages": message}
@@ -168,37 +165,36 @@ func UpdateChat(chatroomId string, message messages.Msg) error {
 	return nil
 }
 
-// func GetMessages() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-// 		chatroom := c.Param("userId")
-// 		var chat Chatroom
+func GetMessages() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		chatroom := c.Param("chatroomId")
+		var chat Chatroom
 
-// 		defer cancel()
-// 		skip := 0
-// 		limit := 0
-// 		filter := bson.M{"chatroom_id": chatroom}
-// 		err := ChatCollec.FindOne(ctx, filter).Decode(&chat)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"couldn't find chatroom": err.Error()}})
-// 			return
-// 		}
-// 		messages:=chatroom.Msg
-// 		if s, err := strconv.Atoi(c.Query("skip")); err == nil {
-// 			skip = s
-// 		}
-// 		if l, err := strconv.Atoi(c.Query("limit")); err == nil {
-// 			limit = l
-// 		}
-// 		total_num_msgs:=int64(len())
-// 		start:=total_num_msgs-skip-limit
-// 		end:=total_num_msgs-skip
-// 		pipeline:=bson.A{
-// 			bson.M{"$match":bson.M{"chatroom_id":chatroom}},
-// 			bson.M{"$"}
-// 		}
+		defer cancel()
+		skip := 0
+		limit := 0
+		if s, err := strconv.Atoi(c.Query("skip")); err == nil {
+			skip = s
+		}
+		if l, err := strconv.Atoi(c.Query("limit")); err == nil {
+			limit = l
+		}
+		filter := bson.M{"chatroom_id": chatroom}
+		projection := bson.M{
+			"messages": bson.M{
 
-// 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"messages": chat.Messages}})
+				"$slice": []interface{}{bson.M{"$reverseArray": "$messages"}, skip, limit}},
+		}
+		//bson.M{"$subtract": []interface{}{bson.M{"$size": "$messages"}, skip}}
+		opts := options.FindOne().SetProjection(projection)
+		err := ChatCollec.FindOne(ctx, filter, opts).Decode(&chat)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"couldn't find chatroom": err.Error()}})
+			return
+		}
 
-// 	}
-// }
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"messages": chat.Messages}})
+
+	}
+}

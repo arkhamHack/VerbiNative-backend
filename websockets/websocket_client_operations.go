@@ -53,7 +53,7 @@ func StartClient(ctx context.Context, ws *websocket.Conn, chatroomId string) {
 			} else {
 				switch msg.Type {
 				case "MESSAGE":
-					NewMessage(userspool, usr, chatroomId, msg.Content.Created_by, msg.Content.Text)
+					NewMessage(userspool, usr, chatroomId, msg.Content.Created_by, msg.Content.Username, msg.Content.Text)
 				default:
 					log.Printf("unknown message type: %s", msg.Type)
 					return
@@ -69,17 +69,19 @@ func StartClient(ctx context.Context, ws *websocket.Conn, chatroomId string) {
 	}
 }
 
-func NewMessage(users WebSocketClientsPool, usr WebSocketClient, chatroomId string, userid string, text string) {
+func NewMessage(users WebSocketClientsPool, usr WebSocketClient, chatroomId string, userid string, username string, text string) {
 	broadcast(users, usr, WebSocketMessages{
 		Type: "MESSAGE",
 		Content: messages.Msg{
 			Created_by: userid,
+			Username:   username,
 			Text:       text,
 			MsgId:      uuid.NewString(),
 		},
 	})
 	err := chatroom.UpdateChat(chatroomId, messages.Msg{
 		Created_by: userid,
+		Username:   username,
 		Text:       text,
 		MsgId:      uuid.NewString(),
 		Timestamp:  time.Now(),

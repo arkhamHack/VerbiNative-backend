@@ -14,7 +14,7 @@ services:
       - .env
 
     ports:
-      - '6000:27017'
+      - '8080:27017'
     volumes:
       - mongodb:/data/db
 
