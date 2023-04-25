@@ -85,7 +85,7 @@ func JoinChat() gin.HandlerFunc {
 		chat := c.Param("chatroomId")
 		//user := c.Param("userId")
 		type User struct {
-			UserID string `json:"user_id"`
+			UserID []string `json:"user_ids"`
 		}
 		var user User
 		var chatr Chatroom
@@ -99,7 +99,7 @@ func JoinChat() gin.HandlerFunc {
 			return
 		}
 		filter := bson.M{"chatroom_id": chat}
-		update := bson.M{"$addToSet": bson.M{"user_ids": user.UserID}}
+		update := bson.M{"$addToSet": bson.M{"user_ids": bson.M{"$each": user.UserID}}}
 		err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&chatr)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
