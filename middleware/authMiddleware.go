@@ -37,7 +37,7 @@ func CORSMiddleware() gin.HandlerFunc {
 		//header.Add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 		fmt.Print("CORS FUnc Called")
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
 
 		// Skip preflight request (OPTIONS)
