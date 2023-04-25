@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -17,7 +18,7 @@ func ConnectDB() *mongo.Client {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	client, err := mongo.NewClient(options.Client().ApplyURI(EnvMongoURI()))
+	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGOURI")))
 	if err != nil {
 		log.Fatal(err)
 	}

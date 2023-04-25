@@ -1,31 +1,36 @@
-version: '3'
+version: '3.8'
 services:
-  go:
-    image: golang:1.19
+  app:
+    image: verbinative:v1.1
     ports:
-      - '8000:8000'
-    command: go run main.go
+      - "8080:8080"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - verbi_network
+    environment:
+      MONGOURI: mongodb+srv://arkhamHack:phantom101@cluster0.yi2kmpg.mongodb.net/?retryWrites=true&w=majority
+      SECRET_KEY: 2DB7C624885215DC87B1FAF7517CF8C97E4B95D0FCCE5BDBD28A66F441E6E041
+      SECRET_SESSION_KEY: w!z%C*F-J@NcRfUjXn2r5u8x/A?D(G+KbPdSgVkYp3s6v9y$B&E)H@McQfThWmZq
 
   mongodb:
     image: mongo
     container_name: mongodb
     restart: always
-    env_file:
-      - .env
-
     ports:
-      - '8080:27017'
+      - "27017:27017"
     volumes:
-      - mongodb:/data/db
-
+      - mongodb-data:/data/db
   redis:
-    image: redis:alpine
+    image: redis
     container_name: redis
+    restart: always
     ports:
-      - '6379:6379'
-    volumes:
-      - redisDB:/data
+      - "6379:6379"
+  
 volumes:
-  mongodb:
-  redisDB:
-
+  mongodb-data:
+networks:
+  verbi_network:
+    driver: bridge
