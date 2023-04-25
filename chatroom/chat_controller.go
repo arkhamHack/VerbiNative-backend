@@ -122,7 +122,7 @@ func GetAllChats() gin.HandlerFunc {
 		pipeline := bson.A{
 			bson.M{
 				"$match": bson.M{
-					"user.user_ids": bson.M{
+					"user.user_id": bson.M{
 						"$in": bson.A{user},
 					},
 				},
