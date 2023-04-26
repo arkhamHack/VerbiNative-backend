@@ -83,29 +83,36 @@ func JoinChat() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		chat := c.Param("chatroomId")
-		//user := c.Param("userId")
+		// user := c.Param("userId")
 		type User struct {
 			UserID []string `json:"user_ids"`
 		}
-		var user User
-		var chatr Chatroom
+		// var user User
+		// var chatr Chatroom
+		var userid_update User
 		defer cancel()
-		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
-		}
-		if validate_err := validate.Struct(&user); validate_err != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"validation error": validate_err.Error()}})
+		if err := c.BindJSON(&userid_update); err != nil {
+			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error: binding error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 		filter := bson.M{"chatroom_id": chat}
-		update := bson.M{"$addToSet": bson.M{"user_ids": bson.M{"$each": user.UserID}}}
-		err := ChatCollec.FindOneAndUpdate(ctx, filter, update).Decode(&chatr)
+		//update := bson.M{"$addToSet": bson.M{"user_ids": bson.M{"$each": user.UserID}}}
+		update := bson.M{"$set": bson.M{"user_ids": userid_update.UserID}}
+		fin, err := ChatCollec.UpdateOne(ctx, filter, update)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"chatroom": chatr}})
+		var updated_Chat Chatroom
+		if fin.MatchedCount == 1 {
+			err := ChatCollec.FindOne(ctx, bson.M{"chatroom_id": chat}).Decode(&updated_Chat)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+				return
+			}
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"chatroom": updated_Chat}})
+
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/websockets"
 
 	"github.com/arkhamHack/VerbiNative-backend/chatroom"
-	"github.com/arkhamHack/VerbiNative-backend/controllers"
 	"github.com/arkhamHack/VerbiNative-backend/middleware"
 
 	"github.com/gin-contrib/sessions"
@@ -18,11 +17,11 @@ import (
 	"github.com/go-redis/redis"
 )
 
-func init() {
-	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
-	defer rdb.Close()
-	rdb.SAdd(controllers.Channels_key, "general", "random")
-}
+// func init() {
+// 	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+// 	defer rdb.Close()
+// 	rdb.SAdd(controllers.Channels_key, "general", "random")
+// }
 
 var rdb *redis.Client
 
