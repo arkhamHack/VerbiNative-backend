@@ -11,8 +11,6 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/controllers"
 	"github.com/arkhamHack/VerbiNative-backend/middleware"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 
 	"github.com/go-redis/redis"
@@ -35,9 +33,9 @@ func main() {
 
 	router.Use(gin.Logger())
 	router.Use(middleware.CORSMiddleware())
-	store := cookie.NewStore([]byte(sessionKey))
+	// store := cookie.NewStore([]byte(sessionKey))
 
-	router.Use(sessions.Sessions("verbinative-user-session", store))
+	// router.Use(sessions.Sessions("verbinative-user-session", store))
 
 	//router.Use(middleware.RedisMiddleware())
 
@@ -51,6 +49,6 @@ func main() {
 	websockets.WebSockRoute(router)
 	router.Group("/ws")
 
-	router.Run("localhost:8080")
+	router.Run(":8080")
 
 }

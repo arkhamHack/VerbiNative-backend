@@ -96,6 +96,9 @@ func (c *webSocketClient) Ping(ctx context.Context) {
 func (c *webSocketClient) Id() string {
 	return c.id
 }
+func (c *webSocketClient) ChatroomId() string {
+	return c.chatroom_id
+}
 func (c *webSocketClient) HandleError(err error) {
 	if _, ok := err.(*websocket.CloseError); ok {
 		return

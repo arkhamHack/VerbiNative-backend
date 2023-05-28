@@ -10,7 +10,6 @@ import (
 	"github.com/arkhamHack/VerbiNative-backend/configs"
 	"github.com/arkhamHack/VerbiNative-backend/helpers"
 	"github.com/arkhamHack/VerbiNative-backend/responses"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	"github.com/google/uuid"
@@ -113,26 +112,27 @@ func Signup() gin.HandlerFunc {
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": result}})
 	}
 }
-func MyHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		session.Set("key", "value")
-		session.Save()
 
-		c.String(http.StatusOK, "Value stored in session")
-		user := session.Get("key")
-		if user == nil {
-			log.Println("Invalid session token")
-			return
-		}
-		log.Println(user)
-	}
-}
+// func MyHandler() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		session := sessions.Default(c)
+// 		session.Set("key", "value")
+// 		session.Save()
+
+//			c.String(http.StatusOK, "Value stored in session")
+//			user := session.Get("key")
+//			if user == nil {
+//				log.Println("Invalid session token")
+//				return
+//			}
+//			log.Println(user)
+//		}
+//	}
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		session.Set("hi", "123")
-		session.Save()
+		// session := sessions.Default(c)
+		// session.Set("hi", "123")
+		// session.Save()
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		// userId := c.Param("userId")
 		var user User
@@ -156,16 +156,6 @@ func Login() gin.HandlerFunc {
 		}
 		token, refreshToken, _ := helpers.GenerateAllTokens(usr_found.Email, usr_found.Username, usr_found.User_id, usr_found.Region)
 		helpers.UpdateAllTokens(token, refreshToken, usr_found.User_id)
-		uid_init := usr_found.User_id
-		session.Set("verbinative-userid", uid_init)
-		err_sess := session.Save()
-		uid := session.Get("verbinative-userid")
-		log.Println("\nUser id:", uid)
-		if err_sess != nil {
-			// handle the error
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
 
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": usr_found}})
 	}

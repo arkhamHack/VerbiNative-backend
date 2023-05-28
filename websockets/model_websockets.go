@@ -17,17 +17,19 @@ const (
 )
 
 type webSocketClient struct {
-	id    string
-	ws    *websocket.Conn
-	msgs  chan WebSocketMessages
-	err   chan error
-	done  chan interface{}
-	mutex sync.Mutex
-	once  sync.Once
+	id          string
+	chatroom_id string
+	ws          *websocket.Conn
+	msgs        chan WebSocketMessages
+	err         chan error
+	done        chan interface{}
+	mutex       sync.Mutex
+	once        sync.Once
 }
 
 type WebSocketClient interface {
 	Id() string
+	ChatroomId() string
 	Launch(ctx context.Context)
 	Write(m WebSocketMessages) error
 	Close() error

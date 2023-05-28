@@ -17,18 +17,19 @@ import (
 var m sync.Mutex
 var ChatCollec *mongo.Collection = configs.GetCollec(configs.Mongo_DB, "servers")
 
-func NewWebSocketClient(ws *websocket.Conn) WebSocketClient {
+func NewWebSocketClient(ws *websocket.Conn, chatroomid string) WebSocketClient {
 	return &webSocketClient{
-		id:   uuid.NewString(),
-		ws:   ws,
-		msgs: make(chan WebSocketMessages),
-		err:  make(chan error),
-		done: make(chan interface{}),
+		id:          uuid.NewString(),
+		chatroom_id: chatroomid,
+		ws:          ws,
+		msgs:        make(chan WebSocketMessages),
+		err:         make(chan error),
+		done:        make(chan interface{}),
 	}
 }
 
 func StartClient(ctx context.Context, ws *websocket.Conn, chatroomId string) {
-	usr := NewWebSocketClient(ws)
+	usr := NewWebSocketClient(ws, chatroomId)
 	mut.Lock()
 	userspool = append(userspool, usr)
 	mut.Unlock()
@@ -70,6 +71,7 @@ func StartClient(ctx context.Context, ws *websocket.Conn, chatroomId string) {
 }
 
 func NewMessage(users WebSocketClientsPool, usr WebSocketClient, chatroomId string, userid string, username string, text string) {
+
 	broadcast(users, usr, WebSocketMessages{
 		Type: "MESSAGE",
 		Content: messages.Msg{
@@ -113,7 +115,7 @@ func MemberJoin(users WebSocketClientsPool, usr WebSocketClient) {
 func broadcast(users WebSocketClientsPool, usr WebSocketClient, msg WebSocketMessages) {
 
 	ForEach(Except(users, func(item WebSocketClient) bool {
-		return item.Id() == usr.Id()
+		return (item.ChatroomId() != usr.ChatroomId())
 	}), func(item WebSocketClient) {
 		item.Write(msg)
 	},
