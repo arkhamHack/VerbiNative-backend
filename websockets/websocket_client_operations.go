@@ -112,13 +112,28 @@ func MemberJoin(users WebSocketClientsPool, usr WebSocketClient) {
 
 }
 
+// func broadcast(users WebSocketClientsPool, usr WebSocketClient, msg WebSocketMessages) {
+
+// 	ForEach(Except(users, func(item WebSocketClient) bool {
+// 		if item.ChatroomId() != usr.ChatroomId() {
+// 			return true
+// 		} else {
+// 			if item.Id() == usr.Id() {
+// 				return true
+// 			} else {
+// 				return false
+// 			}
+// 		}
+// 	}), func(item WebSocketClient) {
+// 		item.Write(msg)
+// 	},
+// 	)
+
+// }
 func broadcast(users WebSocketClientsPool, usr WebSocketClient, msg WebSocketMessages) {
-
-	ForEach(Except(users, func(item WebSocketClient) bool {
-		return (item.ChatroomId() != usr.ChatroomId())
-	}), func(item WebSocketClient) {
-		item.Write(msg)
-	},
-	)
-
+	ForEach(users, func(item WebSocketClient) {
+		if item.ChatroomId() == usr.ChatroomId() && item.Id() != usr.Id() {
+			item.Write(msg)
+		}
+	})
 }
