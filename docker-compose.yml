@@ -3,7 +3,7 @@ services:
   go:
     image: golang:1.19
     ports:
-      - '8080:8080'
+      - '8080:10000'
     command: go run main.go
 
   mongodb:
