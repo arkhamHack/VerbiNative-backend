@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"os"
-
+	"fmt"
 	"github.com/arkhamHack/VerbiNative-backend/users"
 	"github.com/arkhamHack/VerbiNative-backend/websockets"
 
