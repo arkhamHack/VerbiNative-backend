@@ -49,7 +49,10 @@ func main() {
 	// chatRouter.Use(middleware.RedisMiddleware(rdb))
 	websockets.WebSockRoute(router)
 	router.Group("/ws")
-
-	router.Run("localhost:8080")
+	
+	port:=os.Getenv("PORT")
+	
+	address := fmt.Sprintf(":%s", port)
+	router.Run(address)
 
 }
